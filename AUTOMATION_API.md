@@ -31,7 +31,7 @@ The Collector integration performs steps 1, 3 and 5. OpenChatCut runs the native
 
 `skill` and `model` are optional. When a model is specified, the editor selects that exact configured model and fails if unavailable. `skill` is a bundled or installed OpenChatCut skill slug; the native Agent is instructed to load it. The prompt remains the caller's editing requirements. `media_paths` and `asset_ids` record the sources for traceability; they do not import files by themselves.
 
-`GET /api/automation/v1/jobs?project_id=<id>` lists jobs for a project. `POST /api/automation/v1/jobs/<job_id>/cancel` cancels a pending or active job; an active editor polls this state and stops the native Agent. Each job reports `job_id`, `project_id`, `status`, `stage`, `progress`, `agent_run_id` when started, `export_path` on success, `error` on failure, and timestamps. State is saved in OpenChatCut's runtime profile.
+`GET /api/automation/v1/jobs?project_id=<id>` lists jobs for a project. `POST /api/automation/v1/jobs/<job_id>/cancel` cancels a pending or active job; the editor stops an active Agent, and the Collector cancels an active export. `POST /api/automation/v1/jobs/<job_id>/progress` records the Agent run ID or export job ID and approximate stage progress. Each job reports `job_id`, `project_id`, `status`, `stage`, `progress`, `agent_run_id` when started, `export_job_id` during export, `export_path` on success, `error` on failure, and timestamps. State is saved in OpenChatCut's runtime profile.
 
 ## Upstream upgrades
 

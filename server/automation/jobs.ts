@@ -178,16 +178,21 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
       return send(res, 200, job);
     }
     if (req.method === 'POST' && parts.length === 3 && parts[2] === 'progress') {
-      if (!browser) return send(res, 403, { error: 'editor origin required' });
+      if (!browser && !external) return send(res, 403, { error: 'not authorized' });
       const input = await body(req);
       if (input.project_id !== job.project_id) return send(res, 409, { error: 'project mismatch' });
-      if (job.status !== 'editing') return send(res, 409, { error: 'job is not editing' });
       const progress = Number(input.progress);
-      if (!Number.isFinite(progress) || progress < 0 || progress > 84) return send(res, 400, { error: 'invalid progress' });
+      if (!Number.isFinite(progress)) return send(res, 400, { error: 'invalid progress' });
+      if (job.status === 'editing' && browser && progress >= 0 && progress <= 84) {
+        if (typeof input.agent_run_id === 'string' && identifier.test(input.agent_run_id)) {
+          job.agent_run_id = input.agent_run_id;
+        }
+      } else if (job.status === 'exporting' && external && progress >= 85 && progress <= 99) {
+        if (typeof input.export_job_id === 'string' && identifier.test(input.export_job_id)) {
+          job.export_job_id = input.export_job_id;
+        }
+      } else return send(res, 409, { error: 'job is not in the requested stage' });
       job.progress = progress;
-      if (typeof input.agent_run_id === 'string' && identifier.test(input.agent_run_id)) {
-        job.agent_run_id = input.agent_run_id;
-      }
       job.updated_at = new Date().toISOString();
       await persist();
       return send(res, 200, job);
