@@ -18,6 +18,7 @@
 //   Add certificates and notarization for official distribution.
 // - macOS uses a pre-generated standard icns to avoid corrupt 48 px layers during conversion.
 //   Windows continues deriving its ico from the web PNG.
+import { assertPackagedFfmpeg, assertPackagedFfprobe } from '../desktop/ffmpeg-package.mjs';
 
 // Package names follow @remotion/renderer optionalDependencies: win32 uses -msvc and Linux includes a libc suffix.
 const COMPOSITORS = [
@@ -98,6 +99,10 @@ export default {
     ...sqliteVecFilters,
   ],
   asar: true,
+  afterPack: async (context) => {
+    assertPackagedFfmpeg(context.appOutDir, target);
+    assertPackagedFfprobe(context.appOutDir, target);
+  },
   // Real files next to the archive (app.asar.unpacked): executables and shared libraries
   // that a child process or SQLite must open by path. Node's own require of a .node binding
   // is redirected here by Electron; spawn/dlopen paths go through unpackedPath().

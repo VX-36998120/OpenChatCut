@@ -12,6 +12,7 @@ import { dirname, join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { fileURLToPath } from 'node:url';
+import { ensureTargetFfmpeg, ensureTargetFfprobe } from './ffmpeg-package.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const STAGING = join(ROOT, 'desktop-dist', 'chrome-headless-shell');
@@ -96,6 +97,8 @@ async function main(): Promise<void> {
   const t = TARGETS[key];
   if (!t) throw new Error(`unknown target "${key}" — use one of: ${Object.keys(TARGETS).join(' / ')}`);
 
+  ensureTargetFfmpeg(ROOT, key);
+  ensureTargetFfprobe(ROOT, key);
   const chromeDir = await ensureChrome(t);
   await rm(STAGING, { recursive: true, force: true });
   await mkdir(STAGING, { recursive: true });
