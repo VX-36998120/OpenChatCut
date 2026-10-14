@@ -5,6 +5,7 @@ import { useAgentState } from '../../agent/useAgentState';
 import { enhanceAgentPrompt } from '../../agent/agent-session';
 import { useServerRun } from '../../agent/useServerRun';
 import type { ServerRunController } from '../../agent/serverRunProtocol';
+import type { ServerRunStart, ServerRunTerminal, ServerRunTerminalResolution } from '../../agent/serverRunProtocol';
 import {
   useServerRunProposalBridge,
   type ServerRunProposalBridge,
@@ -55,6 +56,10 @@ export function useChatAgentController(
   ctx: AgentContext,
   projectId: string,
   _serverRunEnabled = true,
+  automation?: { current: {
+    onStart: (run: ServerRunStart) => void;
+    onTerminal: (terminal: ServerRunTerminal, resolution: ServerRunTerminalResolution | false) => void;
+  } | null },
 ): AgentController {
   const state = useAgentState(ctx);
   const serverRunRef = useRef<AgentController['send']>(() => Promise.resolve());
@@ -70,9 +75,26 @@ export function useChatAgentController(
     session: bridge.session,
     onRunPrepare: bridge.onRunPrepare,
     onRunAbandon: bridge.onRunAbandon,
-    onRunStart: bridge.onRunStart,
+    onRunStart: async (start) => {
+      const recovery = await bridge.onRunStart(start);
+      automation?.current?.onStart(start);
+      return recovery;
+    },
     onToolAction: bridge.onToolAction,
-    onTerminal: bridge.onTerminal,
+    onTerminal: async (terminal) => {
+      const resolution = await bridge.onTerminal(terminal);
+      if (resolution && typeof resolution === 'object') {
+        return {
+          ...resolution,
+          afterModelCommit: async () => {
+            await resolution.afterModelCommit();
+            automation?.current?.onTerminal(terminal, resolution);
+          },
+        };
+      }
+      automation?.current?.onTerminal(terminal, resolution);
+      return resolution;
+    },
   });
   serverRunRef.current = run.send;
   return serverRunAdapter(run, bridge);

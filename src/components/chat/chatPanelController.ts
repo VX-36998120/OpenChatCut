@@ -43,6 +43,7 @@ import {
   type ChatAttachmentLifecycleState,
 } from './chatAttachmentLifecycle';
 import { useChatAgentController } from './useChatAgentController';
+import { useAutomationAgentJob } from './useAutomationAgentJob';
 import {
   useChatAutoScroll,
   useChatScrollController,
@@ -397,11 +398,14 @@ function useChangeLogSlot(): HTMLElement | null {
 export function useChatPanelController(props: ChatPanelProps): ChatPanelController {
   const t = useT();
   const composer = useComposerState(props.projectId);
+  const automationRef = useRef<ReturnType<typeof useAutomationAgentJob> | null>(null);
   const agent = useChatAgentController(
     props.ctx,
     props.projectId,
     composer.agentSettings.serverRun,
+    automationRef,
   );
+  automationRef.current = useAutomationAgentJob(props.projectId, agent, composer.setAutoApply);
   const externalProposal = useExternalAgentBridge(props.ctx, props.projectId);
   const scroll = useChatScrollController();
   useComposerProject(composer, props.projectId);
