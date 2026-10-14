@@ -3,6 +3,7 @@ import type { AgentController } from '../../agent/useAgent';
 import type { ServerRunStart, ServerRunTerminal, ServerRunTerminalResolution } from '../../agent/serverRunProtocol';
 import { getAgentModelSnapshot, selectAgentModel } from '../../agent/model-selection';
 import { setAgentAutoApply } from '../../agent/approval-mode';
+import { saveChatAutoApply } from '../../persist/sessionPrefs';
 
 interface Job {
   job_id: string;
@@ -87,6 +88,7 @@ export function useAutomationAgentJob(projectId: string, agent: AgentController,
         }
         await request<Job>(route(id) + '/claim', 'POST', { project_id: projectId });
         activeRef.current = id;
+        saveChatAutoApply(projectId, true);
         setAgentAutoApply(true);
         autoApplyRef.current(true);
         const prompt = job.skill
