@@ -157,9 +157,13 @@ export function captionTypographyStyle(
     preset.strike ? 'line-through' : '',
   ].filter(Boolean).join(' ') || 'none';
   const fontFamily = preset.fontFamily.trim() || 'system-ui';
+  const fontSize = positiveNumber(preset.fontSize, 0.04);
   return {
     fontFamily: fontFamilyCss(fontFamily, 'system-ui, sans-serif'),
-    fontSize: nonNegativeNumber(height) * positiveNumber(preset.fontSize, 0.04),
+    // Current styles store a canvas-height ratio. Earlier Agent calls could
+    // persist a pixel size such as 96 directly into this field; keep those
+    // saved captions at that pixel size instead of multiplying by the canvas.
+    fontSize: fontSize > 1 ? fontSize : nonNegativeNumber(height) * fontSize,
     fontWeight: Math.max(1, Math.min(1000, finiteNumber(preset.fontWeight, 400))),
     fontStyle,
     textAlign: normalizedTextAlign(preset.textAlign, fallbackTextAlign),

@@ -487,6 +487,15 @@ Clients must send `Authorization: Bearer <token>`. The current bridge is designe
 | `desktop/` | Electron main process and embedded services |
 | `remotion/` | Headless rendering and export pipeline |
 
+### Local automation API
+
+The optional local Collector bridge is served by `server/automation/jobs.ts` at
+`/api/automation/v1/jobs`. When the native Agent finishes, the desktop client
+includes its final visible reply as `assistant_text` in the job's exporting
+update. The job endpoint returns that field to the local caller so it can be
+shown alongside the corresponding task's run log. The field is bounded to
+40,000 characters and remains in the local automation job store.
+
 ---
 
 ## Data and Privacy

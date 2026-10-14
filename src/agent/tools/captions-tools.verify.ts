@@ -303,6 +303,13 @@ assert.equal(st.pacing, 'word', 'pacing routed to CaptionsData.pacing');
 assert.equal(draft3.getState().captions?.pacing, 'word');
 assert.ok(st.ignored?.some((k) => k.startsWith('maxLines')), 'unmapped style field reported in ignored');
 
+// Models sometimes use fontSize as a pixel value despite the ratio-oriented alias.
+await execCaptionsTool('edit_captions', { action: 'style', json: { fontSize: 96 } }, ctx3);
+assert.ok(
+  Math.abs((draft3.getState().captions?.styleOverride?.fontSize ?? 0) - 96 / 1080) < 1e-9,
+  'fontSize values above 1 are interpreted as pixels and normalized by canvas height',
+);
+
 // layout:锚点 top-center + 偏移 → CaptionsData.layout
 const ly = await execCaptionsTool('edit_captions', { action: 'layout', json: { preset: 'top-center', offsetYRatio: 0.05 } }, ctx3) as { ok: boolean; layout: { anchor: string; offsetYRatio: number } };
 assert.equal(ly.layout.anchor, 'top-center');

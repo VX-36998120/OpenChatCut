@@ -60,6 +60,11 @@ const mapped = mapCaptionStyle({
 assert.deepEqual(mapped.ignored, [], 'all serialized high-impact style fields map into the caption model');
 const serializedOverride = JSON.parse(JSON.stringify(mapped.styleOverride)) as typeof mapped.styleOverride;
 const rendered = captionTextStyle({ ...preset, ...serializedOverride }, 1_000, false);
+assert.equal(
+  captionTextStyle({ ...preset, fontSize: 96 }, 1_920, false).fontSize,
+  96,
+  'legacy pixel font sizes remain visible when rendering saved projects',
+);
 assert.deepEqual(
   {
     fontFamily: rendered.fontFamily,

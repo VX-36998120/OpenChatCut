@@ -51,7 +51,8 @@ export function useAutomationAgentJob(projectId: string, agent: AgentController,
       const disposition = typeof resolution === 'object' ? resolution.disposition : resolution;
       const complete = terminal.status === 'completed' && disposition === 'finalized';
       void request(route(id) + '/update', 'POST', complete
-        ? { project_id: projectId, status: 'exporting', agent_run_id: terminal.runId, progress: 85 }
+        ? { project_id: projectId, status: 'exporting', agent_run_id: terminal.runId, progress: 85,
+            assistant_text: terminal.assistantText.slice(0, 40_000) }
         : { project_id: projectId, status: 'failed', agent_run_id: terminal.runId,
             error: terminal.status === 'awaiting_user'
               ? 'Agent requested user input: ' + terminal.assistantText.slice(0, 600)

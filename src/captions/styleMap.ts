@@ -40,9 +40,18 @@ export function mapCaptionStyle(json: Record<string, unknown>, canvasHeight: num
   const font = str(json.fontFamily) ?? str(json.font);
   if (font) o.fontFamily = font;
   const sizePx = num(json.sizePx);
-  const fontSizeRatio = num(json.fontSizeRatio) ?? num(json.fontSize);
+  const fontSizeRatio = num(json.fontSizeRatio);
+  const fontSizeAlias = num(json.fontSize);
   if (sizePx !== undefined && canvasHeight > 0) o.fontSize = Math.max(0.001, sizePx / canvasHeight);
   else if (fontSizeRatio !== undefined) o.fontSize = Math.max(0.001, fontSizeRatio);
+  else if (fontSizeAlias !== undefined) {
+    // Models often send a pixel size in `fontSize` (for example 96) despite
+    // the ratio-oriented schema alias. Ratios are <= 1; larger values are
+    // unambiguously pixel sizes and must be normalized to the canvas height.
+    o.fontSize = Math.max(0.001, fontSizeAlias > 1 && canvasHeight > 0
+      ? fontSizeAlias / canvasHeight
+      : fontSizeAlias);
+  }
   const weight = num(json.weight) ?? num(json.fontWeight);
   if (weight !== undefined) o.fontWeight = Math.max(1, Math.min(1000, weight));
   const fontStyle = str(json.fontStyle);

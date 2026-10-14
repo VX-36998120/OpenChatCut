@@ -24,6 +24,7 @@ export interface AutomationJob {
   agent_run_id?: string;
   export_job_id?: string;
   export_path?: string;
+  assistant_text?: string;
   error?: string;
   created_at: string;
   updated_at: string;
@@ -202,6 +203,10 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
       const input = await body(req);
       if (browser && input.project_id !== job.project_id) return send(res, 409, { error: 'project mismatch' });
       if (job.status === 'cancelled') return send(res, 409, { error: 'job cancelled' });
+      if (input.status === 'exporting' && input.assistant_text !== undefined
+        && typeof input.assistant_text !== 'string') {
+        return send(res, 400, { error: 'assistant_text must be a string' });
+      }
       if (input.status === 'exporting' && job.status === 'editing') {
         job.status = 'exporting'; job.stage = 'export'; job.progress = 85;
         if (typeof input.agent_run_id === 'string' && identifier.test(input.agent_run_id)) job.agent_run_id = input.agent_run_id;
@@ -212,6 +217,9 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
       } else if (input.status === 'failed' && job.status !== 'succeeded') {
         job.status = 'failed'; job.error = String(input.error || 'Automation failed').slice(0, 1000);
       } else return send(res, 409, { error: 'invalid status transition' });
+      if (input.status === 'exporting' && typeof input.assistant_text === 'string') {
+        job.assistant_text = input.assistant_text.slice(0, 40_000);
+      }
       job.updated_at = new Date().toISOString();
       await persist();
       return send(res, 200, job);
