@@ -82,7 +82,8 @@ export function useAutomationAgentJob(projectId: string, agent: AgentController,
         if (!models.loaded) return;
         if (job.model) {
           const choice = models.choices.find((candidate) => candidate.backend === job.model?.backend
-            && candidate.provider === job.model?.provider && candidate.model === job.model?.model_id);
+            && (candidate.backend === 'copilot' || candidate.provider === job.model?.provider)
+            && candidate.model === job.model?.model_id);
           if (!choice) throw new Error('Requested model is unavailable in this OpenChatCut editor');
           selectAgentModel(choice.id);
         }
