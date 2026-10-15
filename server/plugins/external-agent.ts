@@ -131,6 +131,10 @@ export function externalAgentPlugin(): Plugin {
   return {
     name: 'openchatcut-external-agent',
     configureServer(server) {
+      // Mint the persistent credential as soon as the local service starts.
+      // The collector and other local agents can then connect without requiring
+      // the user to open the MCP guide first.
+      externalMcpToken();
       server.middlewares.use('/api/external-agent', (req, res) => {
         void handleExternalAgentBridge(req, res).catch((error) => {
           if (!res.headersSent) sendBridgeJson(res, 400, { error: error instanceof Error ? error.message : String(error) });
