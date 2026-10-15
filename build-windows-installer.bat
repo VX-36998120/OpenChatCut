@@ -28,21 +28,21 @@ if errorlevel 1 goto :fail
 
 set "ONNXRUNTIME_NODE_INSTALL=skip"
 
-echo [1/2] Installing locked dependencies...
+echo [1/3] Installing locked dependencies...
 call npm ci --no-audit --no-fund
 if errorlevel 1 goto :fail
 
 echo.
-echo [2/2] Building the Windows x64 installer...
+echo [2/3] Building the Windows x64 installer...
 call npm run desktop:dist:win
 if errorlevel 1 goto :fail
 
-set "INSTALLER="
-for /f "delims=" %%F in ('dir /b /a-d /o-d "release\OpenChatCut-*-x64.exe" 2^>nul') do if not defined INSTALLER set "INSTALLER=release\%%F"
-if not defined INSTALLER (
-  echo ERROR: Build finished but no release\OpenChatCut-*-x64.exe was found.
-  goto :fail
-)
+echo.
+echo [3/3] Checking packaged export components and AAC encoding...
+node scripts\windows-export-runtime.verify.mjs
+if errorlevel 1 goto :fail
+
+for /f "delims=" %%V in ('node -p "require('./package.json').version"') do set "INSTALLER=release\OpenChatCut-%%V-x64.exe"
 
 echo.
 echo Build complete:

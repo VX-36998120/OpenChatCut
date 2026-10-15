@@ -12,22 +12,25 @@ assert.equal(compositorPackageName('linux', 'arm64'), '@remotion/compositor-linu
 
 const root = await mkdtemp(join(tmpdir(), 'openchatcut-remotion-binaries-'));
 try {
-  // Windows: the compositor's limited ffmpeg is swapped for the richer static build.
+  // Windows: Remotion's FFmpeg must retain libfdk_aac for AAC audio preprocessing.
   const compositor = join(root, 'compositor');
   const userData = join(root, 'user-data');
-  const richFfmpeg = join(root, 'rich-ffmpeg.exe');
   await mkdir(compositor, { recursive: true });
   await mkdir(userData, { recursive: true });
   await writeFile(join(compositor, 'remotion.exe'), 'compositor');
-  await writeFile(join(compositor, 'ffmpeg.exe'), 'limited');
+  await writeFile(join(compositor, 'ffmpeg.exe'), 'remotion-libfdk-aac');
   await writeFile(join(compositor, 'ffprobe.exe'), 'probe');
   await writeFile(join(compositor, 'avcodec.dll'), 'dll');
-  await writeFile(richFfmpeg, 'nvenc-qsv-amf');
-
-  const windows = { userDataPath: userData, version: '0.2.7', platform: 'win32' as const, compositorDirectory: compositor, ffmpegPath: richFfmpeg };
+  const windows = { userDataPath: userData, version: '0.2.7', platform: 'win32' as const, compositorDirectory: compositor };
+  const stale = join(userData, 'remotion-binaries-0.2.7');
+  await mkdir(stale, { recursive: true });
+  await writeFile(join(stale, 'remotion.exe'), 'compositor');
+  await writeFile(join(stale, 'ffmpeg.exe'), 'static-no-libfdk-aac');
+  await writeFile(join(stale, 'ffprobe.exe'), 'probe');
+  await writeFile(join(stale, '.openchatcut-ready'), 'ok');
   const destination = await ensureRemotionBinaries(windows);
   assert.equal(destination, join(userData, 'remotion-binaries-0.2.7'));
-  assert.equal(await readFile(join(destination, 'ffmpeg.exe'), 'utf8'), 'nvenc-qsv-amf');
+  assert.equal(await readFile(join(destination, 'ffmpeg.exe'), 'utf8'), 'remotion-libfdk-aac');
   assert.equal(await readFile(join(destination, 'ffprobe.exe'), 'utf8'), 'probe');
   assert.equal(await readFile(join(destination, 'remotion.exe'), 'utf8'), 'compositor');
   assert.equal(await readFile(join(destination, 'avcodec.dll'), 'utf8'), 'dll');
@@ -43,10 +46,10 @@ try {
   await writeFile(join(macCompositor, 'ffmpeg'), 'compositor-ffmpeg');
   await writeFile(join(macCompositor, 'ffprobe'), 'probe');
   await writeFile(join(macCompositor, 'libremotion.dylib'), 'dylib');
-  const mac = { userDataPath: macUserData, version: '0.2.14', platform: 'darwin' as const, compositorDirectory: macCompositor, ffmpegPath: richFfmpeg };
+  const mac = { userDataPath: macUserData, version: '0.2.14', platform: 'darwin' as const, compositorDirectory: macCompositor };
   const macDestination = await ensureRemotionBinaries(mac);
   assert.equal(macDestination, join(macUserData, 'remotion-binaries-0.2.14'));
-  assert.equal(await readFile(join(macDestination, 'ffmpeg'), 'utf8'), 'compositor-ffmpeg', 'only Windows swaps ffmpeg');
+  assert.equal(await readFile(join(macDestination, 'ffmpeg'), 'utf8'), 'compositor-ffmpeg');
   assert.equal(await readFile(join(macDestination, 'remotion'), 'utf8'), 'compositor');
   assert.equal(await readFile(join(macDestination, 'libremotion.dylib'), 'utf8'), 'dylib');
   assert.equal(await ensureRemotionBinaries(mac), macDestination);
@@ -59,4 +62,4 @@ try {
   await rm(root, { recursive: true, force: true });
 }
 
-console.log('Remotion binaries verification passed (windows ffmpeg swap, mac mirror, version rollover)');
+console.log('Remotion binaries verification passed (AAC-compatible mirror, stale directory repair, version rollover)');

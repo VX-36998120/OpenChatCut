@@ -30,7 +30,7 @@ assert.deepEqual(
 assert.equal(
   mac.some((check) => check.path === ffmpegPath),
   false,
-  'only Windows mirrors the static ffmpeg at first launch, so only there is it startup-critical',
+  'the bundled static FFmpeg is startup-critical for Windows media processing',
 );
 assert.deepEqual(
   windows.filter((check) => !check.required).map((check) => check.path),

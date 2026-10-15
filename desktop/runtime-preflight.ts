@@ -45,8 +45,8 @@ export function packagedRuntimeAssetChecks(input: PackagedAssetInput): RuntimeAs
       required: false,
     },
   ];
-  // Only Windows swaps the compositor's ffmpeg for the static build at first
-  // launch, so only there does a quarantined ffmpeg.exe block startup.
+  // Windows also runs the bundled static FFmpeg for media import and analysis.
+  // It stays separate from Remotion's AAC-compatible FFmpeg mirror.
   if (input.platform === 'win32') {
     checks.push({ label: '内置 FFmpeg / bundled FFmpeg', path: input.ffmpegPath, required: true });
   }

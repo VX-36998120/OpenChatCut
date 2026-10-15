@@ -2,18 +2,17 @@ import { createRequire } from 'node:module';
 import { existsSync } from 'node:fs';
 import { copyFile, link, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
-import { ffmpegBin } from '../server/media-binaries.ts';
 
 const require = createRequire(import.meta.url);
 const DIRECTORY_PREFIX = 'remotion-binaries-';
 const READY_MARKER = '.openchatcut-ready';
+const READY_VERSION = 'remotion-ffmpeg-v2';
 
 interface RemotionBinariesOptions {
   userDataPath: string;
   version: string;
   platform?: NodeJS.Platform;
   compositorDirectory?: string;
-  ffmpegPath?: string;
 }
 
 /** The @remotion/compositor package for this platform, named the way @remotion/renderer resolves it. */
@@ -42,13 +41,12 @@ async function linkOrCopy(source: string, destination: string): Promise<void> {
   }
 }
 
-async function mirrorDirectory(source: string, destination: string, skip: string): Promise<void> {
+async function mirrorDirectory(source: string, destination: string): Promise<void> {
   await mkdir(destination, { recursive: true });
   for (const entry of await readdir(source, { withFileTypes: true })) {
-    if (entry.name === skip) continue;
     const from = join(source, entry.name);
     const to = join(destination, entry.name);
-    if (entry.isDirectory()) await mirrorDirectory(from, to, '');
+    if (entry.isDirectory()) await mirrorDirectory(from, to);
     else if (entry.isFile()) await linkOrCopy(from, to);
   }
 }
@@ -61,7 +59,8 @@ async function ready(directory: string, platform: NodeJS.Platform): Promise<bool
   for (const name of ['remotion', 'ffmpeg', 'ffprobe']) {
     if (!existsSync(join(directory, binaryName(name, platform)))) return false;
   }
-  return await readFile(join(directory, READY_MARKER), 'utf8').then((value) => value === 'ok').catch(() => false);
+  return await readFile(join(directory, READY_MARKER), 'utf8')
+    .then((value) => value === READY_VERSION).catch(() => false);
 }
 
 async function cleanupOldDirectories(userDataPath: string, keep: string): Promise<void> {
@@ -75,9 +74,10 @@ async function cleanupOldDirectories(userDataPath: string, keep: string): Promis
 /**
  * Mirror the Remotion compositor into a writable, real directory under userData.
  *
- * Two reasons, one per platform family. Windows swaps the compositor's limited ffmpeg for
- * the richer static build (hardware encoders). Every platform needs the copy once the app
- * ships as an asar archive: @remotion/renderer chmods and spawns the compositor at the
+ * Remotion's FFmpeg must stay with its companion libraries: its AAC preprocessing
+ * requires libfdk_aac, which the general-purpose ffmpeg-static build may lack.
+ * Every platform needs the copy once the app ships as an asar archive:
+ * @remotion/renderer chmods and spawns the compositor at the
  * path it resolved, and neither works on a path inside app.asar — not even an unpacked
  * one, since the resolved path still names the archive. With CC_REMOTION_BINARIES_DIR
  * pointing here, the renderer never touches the package directory at all.
@@ -91,13 +91,8 @@ export async function ensureRemotionBinaries(options: RemotionBinariesOptions): 
   const temporary = `${destination}-${process.pid}.tmp`;
   const source = options.compositorDirectory ?? compositorDirectory(platform);
   await rm(temporary, { recursive: true, force: true });
-  if (platform === 'win32') {
-    await mirrorDirectory(source, temporary, 'ffmpeg.exe');
-    await linkOrCopy(options.ffmpegPath ?? ffmpegBin(), join(temporary, 'ffmpeg.exe'));
-  } else {
-    await mirrorDirectory(source, temporary, '');
-  }
-  await writeFile(join(temporary, READY_MARKER), 'ok');
+  await mirrorDirectory(source, temporary);
+  await writeFile(join(temporary, READY_MARKER), READY_VERSION);
   if (!await ready(temporary, platform)) throw new Error('Remotion binaries are incomplete');
   await rm(destination, { recursive: true, force: true });
   await rename(temporary, destination);

@@ -81,7 +81,15 @@ async function extractArchive(archive, outDir) {
   const { promisify } = await import('node:util');
   const run = promisify(execFile);
   if (archive.endsWith('.zip')) {
-    await run('unzip', ['-q', archive, '-d', outDir]);
+    if (process.platform === 'win32') {
+      // Windows does not ship `unzip`; use the inbox PowerShell cmdlet so the
+      // Windows installer build does not depend on Git Bash or another archive tool.
+      const quotePowerShellLiteral = (value) => `'${value.replaceAll("'", "''")}'`;
+      const command = `Expand-Archive -LiteralPath ${quotePowerShellLiteral(archive)} -DestinationPath ${quotePowerShellLiteral(outDir)} -Force`;
+      await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', command]);
+    } else {
+      await run('unzip', ['-q', archive, '-d', outDir]);
+    }
   } else {
     await run('tar', ['-xzf', archive, '-C', outDir]);
   }
