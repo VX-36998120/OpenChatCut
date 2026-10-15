@@ -253,6 +253,8 @@ OpenChatCut 是 **开源 ChatCut 替代方案**：把 **对话式 Agent** 和 **
 
 从 [GitHub Releases](https://github.com/0xsline/OpenChatCut/releases/latest) 下载最新的 macOS、Windows 与 Linux 构建。目前提供 Apple Silicon、Intel Mac 的 DMG、Windows x64 安装包，以及 Linux x64 AppImage。
 
+在 Windows 源码目录双击 `build-windows-installer.bat`，可本机生成 Windows x64 安装包。需要 Node.js 24.x x64 和 npm；首次运行会联网安装锁定依赖并下载目标平台组件，生成的 `.exe` 位于 `release/`。Parallels Windows ARM64 中请安装 x64 版 Node.js。该脚本只在本机打包，不会上传或发布。
+
 这些仍是早期构建。macOS 安装包尚未签名和公证，首次启动时可能需要在系统设置中手动允许。
 
 ### 从源码运行

@@ -253,6 +253,8 @@ Installable visual resources use the editor's `openchatcut-plugin@1` format and 
 
 Download the latest macOS, Windows, and Linux builds from [GitHub Releases](https://github.com/0xsline/OpenChatCut/releases/latest). The release currently includes DMG installers for Apple Silicon and Intel Macs, an x64 Windows installer, and an x64 Linux AppImage.
 
+On Windows, double-click `build-windows-installer.bat` in the source folder to build a local Windows x64 installer. It requires Node.js 24.x x64 and npm; the first run installs locked dependencies and downloads target-platform components. The `.exe` is written to `release/`. On a Parallels Windows ARM64 VM, install the x64 build of Node.js. This script only builds locally; it does not upload or publish a release.
+
 These are early builds. The macOS packages are not yet signed or notarized, so the operating system may require manual approval on first launch.
 
 ### Run from source
